@@ -1,0 +1,47 @@
+name: Dependency and container vulnerabilities
+
+on:
+  push:
+    branches: [main, "feature/**"]
+  pull_request:
+  schedule:
+    - cron: "23 9 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dependencies:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build pinned dependency environment
+        run: docker compose build app
+      - name: Report all production and development advisories
+        continue-on-error: true
+        run: docker compose run --rm --no-deps app pnpm audit --audit-level high
+      - name: Reject high/critical production vulnerabilities
+        run: docker compose run --rm --no-deps app pnpm audit --prod --audit-level high
+
+  containers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - node:24.22.1-bookworm-slim
+          - postgres:18.6-bookworm
+          - axllent/mailpit:v1.31.6
+    steps:
+      - name: Scan pinned container image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ matrix.image }}
+          version: v0.74.0
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"

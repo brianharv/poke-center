@@ -1,0 +1,14 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// A non-user marker verifies migrations and persistent storage through the UI.
+model DevelopmentCheck {
+  id            Int      @id
+  initializedAt DateTime @default(now()) @db.Timestamptz(3)
+}
