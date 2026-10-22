@@ -1,0 +1,15 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Reading this non-user row verifies that migrations ran, not just connectivity.
+// Its stable timestamp also demonstrates persistence across container recreation.
+model DevelopmentCheck {
+  id            Int      @id
+  initializedAt DateTime @default(now()) @db.Timestamptz(3)
+}
