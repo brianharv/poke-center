@@ -1,7 +1,8 @@
 # Poké Center
 
-A Pokémon collection tracker. This first slice provides a barebones development
-readiness page; authentication and Pokémon features follow in separate tickets.
+A Pokémon collection tracker. This slice provides email/password signup and email
+verification. Sign-in UI, protected application routes, and Pokémon features follow
+in separate tickets.
 
 ## Start with Docker (recommended)
 
@@ -9,15 +10,28 @@ Install Docker Desktop (or Docker Engine with Compose v2) and start the daemon.
 No host Node.js, pnpm, PostgreSQL, or browser installation is needed for Docker use.
 
 ```sh
-cp .env.example .env
-docker compose up --build -d
+docker compose build app
+docker compose run --rm --no-deps --user "$(id -u):$(id -g)" app node scripts/setup-env.mjs
+docker compose up -d
 docker compose logs -f app
 ```
 
-Open <http://localhost:3000>. The page should report **Database connected** and a
-database initialization timestamp. The check runs through TanStack Query, tRPC,
-Zod, Prisma, and the actual PostgreSQL database. It also verifies the initial
-migration was applied. The public readiness endpoint contains no account data.
+Open <http://localhost:3000> to create an account with email and a password of
+16–128 characters. Open Mailpit, find the verification message, and follow its
+link. No external email credentials are needed. Verification links expire after an
+hour. The pending-verification page allows resending with a 60-second UI cooldown;
+the server separately enforces request limits using PostgreSQL-backed counters.
+
+The setup command creates `.env` from `.env.example` if absent and generates a
+random auth secret without printing it. Re-running it preserves the secret and
+existing settings. Keep this secret stable: changing it invalidates outstanding
+links and sessions. Never commit `.env`; production secrets and SMTP delivery are
+separate deployment work.
+
+The development-only readiness UI is at <http://localhost:3000/development>. It
+reports **Database connected** and a persistent initialization timestamp through
+TanStack Query, tRPC, Zod, Prisma, and PostgreSQL. `/api/health` remains a public,
+non-user infrastructure check; neither endpoint exposes account data.
 
 - App: <http://localhost:3000>
 - Mailpit inbox: <http://localhost:8025> (SMTP on localhost:1025)
@@ -43,6 +57,20 @@ and applies committed migrations before serving the app.
 The first build downloads dependencies and container images. Subsequent starts use
 Docker's cache. This is a development image, not a production deployment image.
 Netlify deployment, production SMTP, OAuth credentials, and image storage are follow-ups.
+
+`BETTER_AUTH_URL` must match the URL used to open the app (default
+`http://localhost:3000`), including its port. SMTP settings default to Mailpit inside
+Compose. For host tooling use the SMTP settings from `.env.example`. The app derives
+the required internal display name as `Trainer`; users only enter email/password.
+Unverified users cannot authenticate, verification does not automatically sign them
+in, and session cookie caching is disabled for immediate database validation.
+
+Signup is limited to 20 requests per minute per client IP, verification-email
+requests to 5, and verification attempts to 30. Limits are enabled in development
+too and survive app restarts. Before exposing a production origin, configure the
+hosting proxy to sanitize forwarded client-IP headers; the local Compose ports
+are bound to loopback. Verification query strings are excluded from Next.js's
+development request logging so bearer links are not written to app logs.
 
 ## Stop and restart without losing data
 
@@ -76,7 +104,8 @@ docker compose exec app pnpm db:status
 
 Commit schema changes and their SQL migrations together. The first migration adds
 a single non-user readiness marker so the browser check proves schema initialization
-and the timestamp can demonstrate persistence. Future auth tables arrive in issue #3.
+and the timestamp can demonstrate persistence. The signup migration adds Better Auth
+user, account, session, verification, and rate-limit tables without dropping existing data.
 
 For a **deliberate, destructive local reset**, stop the app and run Prisma's reset
 interactively. Read its confirmation: it deletes the database contents and reapplies
@@ -105,10 +134,20 @@ docker compose --profile test build e2e
 docker compose --profile test run --rm e2e
 ```
 
-The browser test loads the actual app against PostgreSQL, checks the database
-status, and verifies the initialization timestamp survives a page reload. HTML
-reports and failure traces appear under `artifacts/`. The test runner waits for the
-app's database-backed health check. To diagnose a startup failure:
+The browser tests load the actual app against PostgreSQL and Mailpit. They cover
+signup, server/client password validation, verification, invalid/expired links,
+resend controls, duplicate signup, server rate limits, and database readiness.
+HTML reports and failure traces appear under `artifacts/`. The runner waits for
+the app's database-backed health check and shares its network namespace so emailed
+`localhost:3000` links work unchanged inside Chromium. Docker browser tests use this
+default origin; for a custom host port use host tests with `PLAYWRIGHT_BASE_URL`
+set to the same URL as `BETTER_AUTH_URL`.
+
+Tests use unique synthetic addresses and a simulated forwarded client IP per run,
+so rerunning the suite does not exhaust another run's IP allowance. The expired-link
+case signs a deliberately expired fixture with the local test secret; it adds no
+application bypass and does not alter database state to fake verification.
+To diagnose a startup failure:
 
 ```sh
 docker compose ps
@@ -125,6 +164,7 @@ nvm install
 nvm use
 npm install --global pnpm@12.14.0
 pnpm install --frozen-lockfile
+node scripts/setup-env.mjs
 pnpm db:generate
 # Start just the services needed by a host app:
 docker compose up -d db mailpit
@@ -132,7 +172,8 @@ pnpm db:deploy
 pnpm dev
 ```
 
-Copy `.env.example` to `.env` first. Stop the Compose app before using its host port.
+The setup script initializes `.env` and the local auth secret. Stop the Compose app
+before using its host port.
 For host browser tests, install Chromium once with `pnpm exec playwright install
 chromium`, then run `pnpm test:e2e`. Use `PLAYWRIGHT_BASE_URL` for a different app port.
 
