@@ -1,0 +1,126 @@
+# Reviewed for local development in PR #9 on 2026-10-22.
+# Preserve the requested runtime/database versions while awaiting refreshed images.
+# Full unfiltered findings remain available as CI artifacts.
+vulnerabilities:
+  - id: CVE-2026-102276
+    paths:
+      [
+        "usr/local/lib/node_modules/npm/node_modules/brace-expansion/package.json",
+      ]
+    expired_at: 2026-11-22
+    statement: &node_reason "Owner-approved local-development exception: the pinned Node 24.22.1 base image still bundles this vulnerable npm tooling. App dependencies remain separately audited."
+  - id: CVE-2026-102278
+    paths:
+      [
+        "usr/local/lib/node_modules/npm/node_modules/brace-expansion/package.json",
+      ]
+    expired_at: 2026-11-22
+    statement: *node_reason
+  - id: CVE-2026-19534
+    paths: ["usr/local/lib/node_modules/npm/node_modules/undici/package.json"]
+    expired_at: 2026-11-22
+    statement: *node_reason
+  - id: CVE-2025-68121
+    paths: ["usr/local/bin/gosu"]
+    expired_at: 2026-11-22
+    statement: &postgres_reason "Owner-approved local-development exception: the pinned PostgreSQL 18.6 image still bundles gosu built with an older Go runtime. Await a refreshed compatible image."
+  - id: CVE-2025-61726
+    paths: ["usr/local/bin/gosu"]
+    expired_at: 2026-11-22
+    statement: *postgres_reason
+  - id: CVE-2025-61729
+    paths: ["usr/local/bin/gosu"]
+    expired_at: 2026-11-22
+    statement: *postgres_reason
+  - id: CVE-2026-111943
+    paths: ["usr/local/bin/gosu"]
+    expired_at: 2026-11-22
+    statement: *postgres_reason
+  - id: CVE-2026-25679
+    paths: ["usr/local/bin/gosu"]
+    expired_at: 2026-11-22
+    statement: *postgres_reason
+  - id: CVE-2026-27145
+    paths: ["usr/local/bin/gosu"]
+    expired_at: 2026-11-22
+    statement: *postgres_reason
+  - id: CVE-2026-32280
+    paths: ["usr/local/bin/gosu"]
+    expired_at: 2026-11-22
+    statement: *postgres_reason
+  - id: CVE-2026-32281
+    paths: ["usr/local/bin/gosu"]
+    expired_at: 2026-11-22
+    statement: *postgres_reason
+  - id: CVE-2026-32283
+    paths: ["usr/local/bin/gosu"]
+    expired_at: 2026-11-22
+    statement: *postgres_reason
+  - id: CVE-2026-33811
+    paths: ["usr/local/bin/gosu"]
+    expired_at: 2026-11-22
+    statement: *postgres_reason
+  - id: CVE-2026-33814
+    paths: ["usr/local/bin/gosu"]
+    expired_at: 2026-11-22
+    statement: *postgres_reason
+  - id: CVE-2026-33818
+    paths: ["usr/local/bin/gosu"]
+    expired_at: 2026-11-22
+    statement: *postgres_reason
+  - id: CVE-2026-39820
+    paths: ["usr/local/bin/gosu"]
+    expired_at: 2026-11-22
+    statement: *postgres_reason
+  - id: CVE-2026-39821
+    paths: ["usr/local/bin/gosu"]
+    expired_at: 2026-11-22
+    statement: *postgres_reason
+  - id: CVE-2026-39822
+    paths: ["usr/local/bin/gosu"]
+    expired_at: 2026-11-22
+    statement: *postgres_reason
+  - id: CVE-2026-39836
+    paths: ["usr/local/bin/gosu"]
+    expired_at: 2026-11-22
+    statement: *postgres_reason
+  - id: CVE-2026-42499
+    paths: ["usr/local/bin/gosu"]
+    expired_at: 2026-11-22
+    statement: *postgres_reason
+  - id: CVE-2026-42504
+    paths: ["usr/local/bin/gosu"]
+    expired_at: 2026-11-22
+    statement: *postgres_reason
+  - id: CVE-2026-56853
+    paths: ["usr/local/bin/gosu"]
+    expired_at: 2026-11-22
+    statement: *postgres_reason
+  - id: CVE-2026-56858
+    paths: ["usr/local/bin/gosu"]
+    expired_at: 2026-11-22
+    statement: *postgres_reason
+  - id: CVE-2026-56859
+    paths: ["usr/local/bin/gosu"]
+    expired_at: 2026-11-22
+    statement: *postgres_reason
+  - id: CVE-2026-56860
+    paths: ["usr/local/bin/gosu"]
+    expired_at: 2026-11-22
+    statement: *postgres_reason
+  - id: CVE-2026-56862
+    paths: ["usr/local/bin/gosu"]
+    expired_at: 2026-11-22
+    statement: *postgres_reason
+  - id: CVE-2026-78667
+    paths: ["usr/local/bin/gosu"]
+    expired_at: 2026-11-22
+    statement: *postgres_reason
+  - id: CVE-2026-78669
+    paths: ["usr/local/bin/gosu"]
+    expired_at: 2026-11-22
+    statement: *postgres_reason
+  - id: CVE-2026-97031
+    paths: ["usr/local/bin/gosu"]
+    expired_at: 2026-11-22
+    statement: *postgres_reason

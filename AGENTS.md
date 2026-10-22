@@ -30,6 +30,11 @@ Read `docs/agents/domain.md` before exploring domain concepts or decisions.
 - Keep ticket implementation on its child branch; create neither ticket changes
   directly on `main` nor child pull requests targeting `main`.
 
+## Coding conventions
+
+Use SCREAMING_SNAKE_CASE for module-level primitive constants. Preserve names
+required by framework APIs, such as Next.js route exports `runtime` and `dynamic`.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 ## This is NOT the Next.js you know

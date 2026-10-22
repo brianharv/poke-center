@@ -149,6 +149,13 @@ browser smoke test on feature branches and pull requests. The separate security
 workflow audits npm dependencies and scans the pinned Node, PostgreSQL, and Mailpit
 images for fixable high/critical vulnerabilities on changes and weekly.
 
+Container scans retain unfiltered JSON reports as Actions artifacts. Exceptions in
+`.trivyignore.yaml` cover only the reviewed upstream npm-tooling and `gosu` findings
+in the pinned Node/PostgreSQL images. They are scoped by CVE and affected file path,
+expire on November 22, 2026, and do not suppress new CVEs or findings in app packages.
+Recheck the published images and remove resolved exceptions before renewing any.
+Mailpit was upgraded to v1.32.0 to fix its reported Go runtime vulnerability.
+
 The full dependency audit is always reported, including development advisories.
 Any high/critical production advisory fails the security check.
 Currently `braces` has an unpatched development-only advisory
