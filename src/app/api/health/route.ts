@@ -1,6 +1,5 @@
 import { appRouter } from "@/server/router";
 
-// Next.js requires these exact lowercase export names and literal values.
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
