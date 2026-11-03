@@ -56,7 +56,12 @@ export function SignupForm() {
   }
 
   return (
-    <form onSubmit={submit} noValidate className="flex max-w-sm flex-col gap-4">
+    <form
+      aria-label="Create account"
+      onSubmit={submit}
+      noValidate
+      className="flex max-w-sm flex-col gap-4"
+    >
       <div className="flex flex-col gap-1">
         <label htmlFor="signup-email">Email</label>
         <input
