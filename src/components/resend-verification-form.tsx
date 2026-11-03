@@ -23,7 +23,7 @@ export function ResendVerificationForm() {
     return () => clearTimeout(timer);
   }, [cooldown]);
 
-  async function submit(event: React.FormEvent<HTMLFormElement>) {
+  async function submit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
     setMessage("");

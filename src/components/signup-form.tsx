@@ -18,7 +18,7 @@ export function SignupForm() {
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
 
-  async function submit(event: React.FormEvent<HTMLFormElement>) {
+  async function submit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
     const parsed = signupSchema.safeParse({ email, password });
