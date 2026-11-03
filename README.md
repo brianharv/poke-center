@@ -28,10 +28,13 @@ existing settings. Keep this secret stable: changing it invalidates outstanding
 links and sessions. Never commit `.env`; production secrets and SMTP delivery are
 separate deployment work.
 
-The development-only readiness UI is at <http://localhost:3000/development>. It
-reports **Database connected** and a persistent initialization timestamp through
-TanStack Query, tRPC, Zod, Prisma, and PostgreSQL. `/api/health` remains a public,
-non-user infrastructure check; neither endpoint exposes account data.
+In development, the landing page shows database readiness above sign-in without
+requiring an account. The panel reads the public `/api/health` infrastructure check
+through TanStack Query and Zod and shows **Database connected** with a persistent
+initialization timestamp. The same panel is available to signed-in users at
+<http://localhost:3000/development>. Neither surface is shown in production;
+account tRPC operations remain protected, and the health response contains no
+account data.
 
 - App: <http://localhost:3000>
 - Mailpit inbox: <http://localhost:8025> (SMTP on localhost:1025)
@@ -65,8 +68,31 @@ the required internal display name as `Trainer`; users only enter email/password
 Unverified users cannot authenticate, verification does not automatically sign them
 in, and session cookie caching is disabled for immediate database validation.
 
-Signup is limited to 20 requests per minute per client IP, verification-email
-requests to 5, and verification attempts to 30. Limits are enabled in development
+After verification, sign in from the landing page to open the protected `/pokemon`
+shell. Catalog data is a later feature. Protected navigation preserves the path and
+query in `returnTo`; successful sign-in resumes it. Only implemented protected
+destinations are allowed (`/pokemon`, plus `/development` in development). External,
+malformed, and authentication destinations fall back to `/pokemon`. Add future
+protected routes to `src/lib/return-destination.ts` when implementing them.
+
+Pages are guarded by the server Proxy and validate sessions again before reading
+private data. All tRPC procedures use database-validated authentication and return
+`401` for anonymous, expired, revoked, or unverified sessions. `/api/health` is the
+public infrastructure exception. Library-managed session cookies are HttpOnly and
+SameSite=Lax; HTTPS `BETTER_AUTH_URL` origins also enable Secure cookies. Never use
+cookie presence as proof of authorization in a new page, handler, or procedure.
+
+Sign-out revokes the database session, clears TanStack Query state, and replaces
+the current location with landing without a return destination. Sign-in also
+clears client state and replaces the document. Protected views are hidden before
+history snapshots and revalidated on restoration/focus; other tabs receive a
+credential-free authentication-change signal when browser storage is available.
+Unauthorized client tRPC calls clear private state and return to sign-in without
+replaying mutations. Timed session monitoring and expiry-return behavior are
+covered by the following session-timeout ticket.
+
+Signup is limited to 20 requests per minute per client IP, password sign-in to 5,
+verification-email requests to 5, and verification attempts to 30. Limits are enabled in development
 too and survive app restarts. Before exposing a production origin, configure the
 hosting proxy to sanitize forwarded client-IP headers; the local Compose ports
 are bound to loopback. Verification query strings are excluded from Next.js's

@@ -21,3 +21,8 @@ export const signupSchema = z.object({
 });
 
 export const resendSchema = z.object({ email: emailSchema });
+
+export const signinSchema = z.object({
+  email: emailSchema,
+  password: z.string().min(1, "Enter your password.").max(MAX_PASSWORD_LENGTH),
+});

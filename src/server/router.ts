@@ -1,31 +1,28 @@
 import "server-only";
 import { initTRPC, TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { getDatabase } from "@/server/database";
+import { getReadiness } from "@/server/readiness";
+import { readSession } from "@/server/session";
+import { readinessSchema } from "@/lib/readiness";
 
-const t = initTRPC.create();
+const t = initTRPC.context<{ headers: Headers }>().create();
+
+const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
+  const session = await readSession(ctx.headers);
+  if (!session) throw new TRPCError({ code: "UNAUTHORIZED" });
+  return next({
+    ctx: { viewer: { id: session.user.id, email: session.user.email } },
+  });
+});
 
 export const appRouter = t.router({
-  // Public infrastructure check only. Future account procedures require auth.
-  readiness: t.procedure
+  viewer: protectedProcedure.query(({ ctx }) => ctx.viewer),
+  readiness: protectedProcedure
     .input(z.object({}).strict())
-    .output(
-      z.object({
-        status: z.literal("ready"),
-        database: z.literal("connected"),
-        initializedAt: z.iso.datetime(),
-      }),
-    )
+    .output(readinessSchema)
     .query(async () => {
       try {
-        const check = await getDatabase().developmentCheck.findUniqueOrThrow({
-          where: { id: 1 },
-        });
-        return {
-          status: "ready" as const,
-          database: "connected" as const,
-          initializedAt: check.initializedAt.toISOString(),
-        };
+        return await getReadiness();
       } catch {
         throw new TRPCError({
           code: "SERVICE_UNAVAILABLE",
