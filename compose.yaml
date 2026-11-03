@@ -37,6 +37,9 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-poke_center}:${POSTGRES_PASSWORD:-poke_center_local}@db:5432/${POSTGRES_DB:-poke_center}
       SMTP_HOST: mailpit
       SMTP_PORT: "1025"
+      SMTP_FROM: ${SMTP_FROM:-Poké Center <noreply@poke-center.test>}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-}
       NEXT_TELEMETRY_DISABLED: "1"
     ports:
       - "127.0.0.1:${APP_PORT:-3000}:3000"
@@ -67,8 +70,11 @@ services:
       context: .
       target: e2e
     init: true
+    network_mode: service:app
     environment:
-      PLAYWRIGHT_BASE_URL: http://poke-center.test:3000
+      PLAYWRIGHT_BASE_URL: http://localhost:3000
+      MAILPIT_API_URL: http://mailpit:8025
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-}
     volumes:
       - ./artifacts/playwright-report:/app/playwright-report
       - ./artifacts/test-results:/app/test-results

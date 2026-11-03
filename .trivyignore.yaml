@@ -1,25 +1,7 @@
 # Reviewed for local development in PR #9 on 2026-10-22.
-# Preserve the requested runtime/database versions while awaiting refreshed images.
+# Preserve the requested database version while awaiting a refreshed image.
 # Full unfiltered findings remain available as CI artifacts.
 vulnerabilities:
-  - id: CVE-2026-102276
-    paths:
-      [
-        "usr/local/lib/node_modules/npm/node_modules/brace-expansion/package.json",
-      ]
-    expired_at: 2026-11-22
-    statement: &node_reason "Owner-approved local-development exception: the pinned Node 24.22.1 base image still bundles this vulnerable npm tooling. App dependencies remain separately audited."
-  - id: CVE-2026-102278
-    paths:
-      [
-        "usr/local/lib/node_modules/npm/node_modules/brace-expansion/package.json",
-      ]
-    expired_at: 2026-11-22
-    statement: *node_reason
-  - id: CVE-2026-19534
-    paths: ["usr/local/lib/node_modules/npm/node_modules/undici/package.json"]
-    expired_at: 2026-11-22
-    statement: *node_reason
   - id: CVE-2025-68121
     paths: ["usr/local/bin/gosu"]
     expired_at: 2026-11-22

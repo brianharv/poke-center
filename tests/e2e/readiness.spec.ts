@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 test("a developer can verify the app's database connection in the browser", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/development");
   await expect(
     page.getByRole("heading", { name: "Poké Center" }),
   ).toBeVisible();

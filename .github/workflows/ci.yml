@@ -20,6 +20,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build development and browser-test images
         run: docker compose --profile test build
+      - name: Initialize local authentication environment
+        run: docker compose run --rm --no-deps --user "$(id -u):$(id -g)" app node scripts/setup-env.mjs
       - name: Types, lint, formatting, and production build
         run: docker compose run --rm --no-deps app sh -c 'pnpm check && pnpm build'
       - name: Start development environment
