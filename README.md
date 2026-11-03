@@ -156,13 +156,13 @@ docker compose logs app db
 
 ## Optional host tooling
 
-The pinned runtime is Node.js **24.22.1** and package manager is **pnpm 12.14.0**.
+The pinned runtime is Node.js **24.22.1** and package manager is **pnpm 12.16.1**.
 Docker, package engines, and CI enforce these versions. For host editor tooling:
 
 ```sh
 nvm install
 nvm use
-npm install --global pnpm@12.14.0
+npm install --global pnpm@12.16.1
 pnpm install --frozen-lockfile
 node scripts/setup-env.mjs
 pnpm db:generate
@@ -187,12 +187,16 @@ The starter Tailwind CSS is retained without a custom design system.
 
 GitHub Actions runs types, lint, formatting, a production build, and the Docker-based
 browser smoke test on feature branches and pull requests. The separate security
-workflow audits npm dependencies and scans the pinned Node, PostgreSQL, and Mailpit
-images for fixable high/critical vulnerabilities on changes and weekly.
+workflow audits npm dependencies and scans the built application base image and
+pinned PostgreSQL and Mailpit images for fixable high/critical vulnerabilities on
+changes and weekly. The application base installs pinned pnpm and removes npm,
+which is no longer needed by subsequent builds or development commands. This
+removes the vulnerable dependencies bundled with the upstream image's npm tooling.
+pnpm is pinned to 12.16.1, which bundles patched Undici 6.29.1.
 
 Container scans retain unfiltered JSON reports as Actions artifacts. Exceptions in
-`.trivyignore.yaml` cover only the reviewed upstream npm-tooling and `gosu` findings
-in the pinned Node/PostgreSQL images. They are scoped by CVE and affected file path,
+`.trivyignore.yaml` cover only the reviewed upstream `gosu` findings
+in the pinned PostgreSQL image. They are scoped by CVE and affected file path,
 expire on November 22, 2026, and do not suppress new CVEs or findings in app packages.
 Recheck the published images and remove resolved exceptions before renewing any.
 Mailpit was upgraded to v1.32.0 to fix its reported Go runtime vulnerability.

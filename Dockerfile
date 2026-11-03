@@ -8,7 +8,8 @@ WORKDIR /app
 RUN apt-get update \
     && apt-get install -y --no-install-recommends openssl ca-certificates \
     && rm -rf /var/lib/apt/lists/* \
-    && npm install --global pnpm@12.14.0
+    && npm install --global pnpm@12.16.1 \
+    && npm uninstall --global npm
 
 FROM base AS dependencies
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
