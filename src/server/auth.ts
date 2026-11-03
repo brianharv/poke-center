@@ -10,7 +10,9 @@ import {
   MAX_PASSWORD_LENGTH,
   signupSchema,
   resendSchema,
+  signinSchema,
 } from "@/lib/auth-validation";
+import { safeReturnTo } from "@/lib/return-destination";
 import { getDatabase } from "@/server/database";
 
 const VERIFICATION_TTL_SECONDS = 60 * 60;
@@ -72,9 +74,13 @@ function createAuth() {
         "/sign-up/email": { window: 60, max: 20 },
         "/send-verification-email": { window: 60, max: 5 },
         "/verify-email": { window: 60, max: 30 },
+        "/sign-in/email": { window: 60, max: 5 },
       },
     },
     advanced: {
+      useSecureCookies:
+        new URL(configuration.BETTER_AUTH_URL).protocol === "https:",
+      defaultCookieAttributes: { httpOnly: true, sameSite: "lax" },
       backgroundTasks: {
         handler(promise) {
           after(async () => {
@@ -87,6 +93,23 @@ function createAuth() {
     },
     hooks: {
       before: createAuthMiddleware(async (ctx) => {
+        if (ctx.path === "/sign-in/email") {
+          const parsed = signinSchema.safeParse(ctx.body);
+          if (!parsed.success) {
+            throw new APIError("BAD_REQUEST", {
+              message: "Enter a valid email address and password.",
+            });
+          }
+          return {
+            context: {
+              ...ctx,
+              body: {
+                ...parsed.data,
+                callbackURL: safeReturnTo(ctx.body?.callbackURL),
+              },
+            },
+          };
+        }
         if (ctx.path === "/sign-up/email") {
           const parsed = signupSchema.safeParse(ctx.body);
           if (!parsed.success) {

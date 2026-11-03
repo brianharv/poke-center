@@ -1,7 +1,7 @@
 import { createHmac, randomInt, randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
-import type { APIRequestContext } from "@playwright/test";
 import { expect, test } from "@playwright/test";
+import { verificationLink } from "./support/auth";
 
 // Simulate a separate proxied client per run so rate-limit tests can be rerun.
 const TEST_CLIENT_IP = `198.18.${randomInt(256)}.${randomInt(1, 255)}`;
@@ -20,12 +20,19 @@ test("the signup form stays safe while client scripts load", async ({
   });
   try {
     await page.goto("/", { waitUntil: "commit" });
-    await expect(page.getByLabel("Email", { exact: true })).toBeDisabled();
+    await expect(
+      page
+        .getByRole("form", { name: "Create account" })
+        .getByLabel("Email", { exact: true }),
+    ).toBeDisabled();
     await expect(
       page.getByRole("button", { name: "Create account" }),
     ).toBeDisabled();
     releaseScripts();
-    await page.getByLabel("Email", { exact: true }).fill("invalid");
+    await page
+      .getByRole("form", { name: "Create account" })
+      .getByLabel("Email", { exact: true })
+      .fill("invalid");
     await page.getByRole("button", { name: "Create account" }).click();
     await expect(
       page.getByText("Enter a valid email address.", { exact: true }),
@@ -35,40 +42,18 @@ test("the signup form stays safe while client scripts load", async ({
   }
 });
 
-async function verificationLink(
-  request: APIRequestContext,
-  email: string,
-  minimumMessages = 1,
-) {
-  const inboxURL = process.env.MAILPIT_API_URL ?? "http://localhost:8025";
-  let messageID = "";
-  await expect
-    .poll(async () => {
-      const response = await request.get(`${inboxURL}/api/v1/search`, {
-        params: { query: `to:${email}` },
-      });
-      expect(response.ok()).toBe(true);
-      const inbox = await response.json();
-      messageID =
-        inbox.messages?.length >= minimumMessages ? inbox.messages[0].ID : "";
-      return messageID;
-    })
-    .not.toBe("");
-  const response = await request.get(`${inboxURL}/api/v1/message/${messageID}`);
-  const message = await response.json();
-  const url = message.Text.match(/https?:\/\/\S+/)?.[0];
-  if (!url) throw new Error("Verification email did not contain a link.");
-  return url as string;
-}
-
 test("a visitor signs up with email and password and verifies the email link", async ({
   page,
   request,
 }) => {
   const email = `signup-${randomUUID()}@example.test`;
   await page.goto("/");
-  await page.getByLabel("Email", { exact: true }).fill(email);
   await page
+    .getByRole("form", { name: "Create account" })
+    .getByLabel("Email", { exact: true })
+    .fill(email);
+  await page
+    .getByRole("form", { name: "Create account" })
     .getByLabel("Password", { exact: true })
     .fill("a long passphrase for testing");
   await page.getByRole("button", { name: "Create account" }).click();
@@ -103,8 +88,14 @@ test("signup validates email and the 15/16-character boundary on client and serv
 }) => {
   const email = `boundary-${randomUUID()}@example.test`;
   await page.goto("/");
-  await page.getByLabel("Email", { exact: true }).fill("invalid");
-  await page.getByLabel("Password", { exact: true }).fill("123456789012345");
+  await page
+    .getByRole("form", { name: "Create account" })
+    .getByLabel("Email", { exact: true })
+    .fill("invalid");
+  await page
+    .getByRole("form", { name: "Create account" })
+    .getByLabel("Password", { exact: true })
+    .fill("123456789012345");
   await page.getByRole("button", { name: "Create account" }).click();
   await expect(
     page.getByText("Enter a valid email address.", { exact: true }),
@@ -128,8 +119,14 @@ test("signup validates email and the 15/16-character boundary on client and serv
       })
     ).status(),
   ).toBe(400);
-  await page.getByLabel("Email", { exact: true }).fill(email);
-  await page.getByLabel("Password", { exact: true }).fill("1234567890123456");
+  await page
+    .getByRole("form", { name: "Create account" })
+    .getByLabel("Email", { exact: true })
+    .fill(email);
+  await page
+    .getByRole("form", { name: "Create account" })
+    .getByLabel("Password", { exact: true })
+    .fill("1234567890123456");
   await page.getByRole("button", { name: "Create account" }).click();
   await expect(
     page.getByRole("heading", { name: "Check your email" }),
