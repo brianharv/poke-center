@@ -28,10 +28,13 @@ existing settings. Keep this secret stable: changing it invalidates outstanding
 links and sessions. Never commit `.env`; production secrets and SMTP delivery are
 separate deployment work.
 
-The development-only readiness UI is at <http://localhost:3000/development>. It
-reports **Database connected** and a persistent initialization timestamp through
-TanStack Query, tRPC, Zod, Prisma, and PostgreSQL. `/api/health` remains a public,
-non-user infrastructure check; neither endpoint exposes account data.
+In development, the landing page shows database readiness above sign-in without
+requiring an account. The panel reads the public `/api/health` infrastructure check
+through TanStack Query and Zod and shows **Database connected** with a persistent
+initialization timestamp. The same panel is available to signed-in users at
+<http://localhost:3000/development>. Neither surface is shown in production;
+account tRPC operations remain protected, and the health response contains no
+account data.
 
 - App: <http://localhost:3000>
 - Mailpit inbox: <http://localhost:8025> (SMTP on localhost:1025)
