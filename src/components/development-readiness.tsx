@@ -1,16 +1,25 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useTRPC } from "@/trpc/provider";
+import { readinessSchema } from "@/lib/readiness";
 
 export default function DevelopmentReadiness() {
-  const trpc = useTRPC();
-  const readiness = useQuery(trpc.readiness.queryOptions({}, { retry: false }));
+  const readiness = useQuery({
+    queryKey: ["development-readiness"],
+    retry: false,
+    queryFn: async () => {
+      const response = await fetch("/api/health", { cache: "no-store" });
+      if (!response.ok) throw new Error("Database unavailable");
+      return readinessSchema.parse(await response.json());
+    },
+  });
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-4 p-8">
-      <h1 className="text-2xl font-semibold">Poké Center</h1>
-      <p>Development environment</p>
+    <section
+      aria-label="Development environment"
+      className="flex flex-col gap-2 rounded border p-4"
+    >
+      <h2 className="font-semibold">Development environment</h2>
       <p role="status">
         {readiness.isPending
           ? "Checking database…"
@@ -36,6 +45,6 @@ export default function DevelopmentReadiness() {
       >
         Check again
       </button>
-    </main>
+    </section>
   );
 }

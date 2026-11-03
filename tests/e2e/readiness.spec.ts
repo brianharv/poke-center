@@ -1,17 +1,14 @@
 import { expect, test } from "@playwright/test";
-import { createVerifiedUser } from "./support/auth";
 
-test("a developer can verify the app's database connection in the browser", async ({
+test("a visitor can verify the development database connection before signing in", async ({
   page,
-  request,
 }) => {
-  const user = await createVerifiedUser(request);
-  expect(
-    (await page.request.post("/api/auth/sign-in/email", { data: user })).ok(),
-  ).toBe(true);
-  await page.goto("/development");
+  await page.goto("/");
   await expect(
     page.getByRole("heading", { name: "Poké Center" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("form", { name: "Sign in", exact: true }),
   ).toBeVisible();
   await expect(page.getByRole("status")).toHaveText("Database connected");
   const initialization = page.getByTestId("database-initialized-at");

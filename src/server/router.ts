@@ -3,6 +3,7 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { getReadiness } from "@/server/readiness";
 import { readSession } from "@/server/session";
+import { readinessSchema } from "@/lib/readiness";
 
 const t = initTRPC.context<{ headers: Headers }>().create();
 
@@ -18,13 +19,7 @@ export const appRouter = t.router({
   viewer: protectedProcedure.query(({ ctx }) => ctx.viewer),
   readiness: protectedProcedure
     .input(z.object({}).strict())
-    .output(
-      z.object({
-        status: z.literal("ready"),
-        database: z.literal("connected"),
-        initializedAt: z.iso.datetime(),
-      }),
-    )
+    .output(readinessSchema)
     .query(async () => {
       try {
         return await getReadiness();

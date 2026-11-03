@@ -15,19 +15,18 @@ export async function proxy(request: NextRequest) {
   }
 
   const session = await readSession(request.headers);
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("x-app-return-to", pathname + search);
-  const response = session
-    ? NextResponse.next({
-        request: {
-          headers: requestHeaders,
-        },
-      })
-    : pathname.startsWith("/api/")
-      ? NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-      : NextResponse.redirect(
-          new URL(signInDestination(pathname + search), request.url),
-        );
+  let response: NextResponse;
+  if (session) {
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set("x-app-return-to", pathname + search);
+    response = NextResponse.next({ request: { headers: requestHeaders } });
+  } else if (pathname.startsWith("/api/")) {
+    response = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  } else {
+    response = NextResponse.redirect(
+      new URL(signInDestination(pathname + search), request.url),
+    );
+  }
   response.headers.set("Cache-Control", "private, no-store");
   return response;
 }
