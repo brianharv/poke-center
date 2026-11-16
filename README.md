@@ -262,7 +262,9 @@ Container scans retain unfiltered JSON reports as Actions artifacts. Exceptions 
 in the pinned PostgreSQL image. They are scoped by CVE and affected file path,
 expire on November 22, 2026, and do not suppress new CVEs or findings in app packages.
 Recheck the published images and remove resolved exceptions before renewing any.
-Mailpit was upgraded to v1.32.0 to fix its reported Go runtime vulnerability.
+Mailpit is pinned to v1.33.1, including patched Go networking dependencies. The
+application base explicitly upgrades APT and its library from Debian's security
+repository. Bootstrap APT operations disable retries while installing that fix.
 
 The full dependency audit is always reported, including development advisories.
 Any high/critical production advisory fails the security check.
