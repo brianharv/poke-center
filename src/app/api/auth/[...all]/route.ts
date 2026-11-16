@@ -1,9 +1,6 @@
+import { toNextJsHandler } from "better-auth/next-js";
 import { getAuth } from "@/server/auth";
 
-export function GET(request: Request) {
-  return getAuth().handler(request);
-}
-
-export function POST(request: Request) {
-  return getAuth().handler(request);
-}
+export const { GET, POST } = toNextJsHandler((request) =>
+  getAuth().handler(request),
+);
