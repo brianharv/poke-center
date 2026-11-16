@@ -88,8 +88,45 @@ clears client state and replaces the document. Protected views are hidden before
 history snapshots and revalidated on restoration/focus; other tabs receive a
 credential-free authentication-change signal when browser storage is available.
 Unauthorized client tRPC calls clear private state and return to sign-in without
-replaying mutations. Timed session monitoring and expiry-return behavior are
-covered by the following session-timeout ticket.
+replaying mutations. Session expiration returns to the protected view and query
+visible when invalidation is detected, rather than the original sign-in target.
+Unsaved form contents are not restored, and failed mutations are not replayed.
+
+## Session lifetime decisions (#5)
+
+The local defaults deliberately combine a short rolling inactivity window with a
+fixed maximum age measured from sign-in. Settings are integer seconds in `.env`;
+restart the app after changing them. Compose passes them to the app, and optional
+host development uses the same defaults.
+
+| Setting                    | Default             | Behavior                                                                                                                         |
+| -------------------------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `SESSION_IDLE_SECONDS`     | `1800` (30 minutes) | Inactivity expiry measured from the last recorded renewal.                                                                       |
+| `SESSION_RENEWAL_SECONDS`  | `300` (5 minutes)   | Authenticated page/data requests renew eligible sessions and deliver refreshed cookies. Must be less than the inactivity window. |
+| `SESSION_ABSOLUTE_SECONDS` | `604800` (7 days)   | Renewal never extends access beyond this age from the original sign-in.                                                          |
+| `SESSION_CHECK_SECONDS`    | `60`                | Visible idle views check at this interval or earlier at reported expiry. Configurable from 5 to 300 seconds.                     |
+
+Renewal is batched to avoid writing on every request: a request within five minutes
+of the last renewal does not move the deadline. With defaults, expiration can
+therefore occur 25–30 minutes after the last authenticated request. Scrolling,
+typing, public health checks, and idle session checks do not renew access.
+Session checks explicitly disable renewal. Hidden tabs pause their timer and
+revalidate on visibility/focus restoration; browser suspension may delay timers,
+but protected server requests always validate immediately. Network failures hide
+private content and offer retry instead of displaying stale data.
+
+Both inactivity and absolute limits apply to existing session records too. A
+shorter configured deadline clamps older records without counting that clamp as
+activity. Expired sessions are removed and library-managed cookies are cleared.
+PostgreSQL session records and persistent HttpOnly cookies survive browser/app
+restarts while still valid; restarting does not reset either lifetime. No separate
+remember-me mode is exposed.
+
+Expiration tests use dedicated PostgreSQL session fixtures and Playwright's clock;
+they do not wait for real expiry or add test-only HTTP endpoints. Run against the
+local/CI database with the documented default policy. Container tests use
+`TEST_DATABASE_URL`; host tests use it when set, otherwise the host `DATABASE_URL`
+from `.env`. Do not point these fixture tests at a production database.
 
 Signup is limited to 20 requests per minute per client IP, password sign-in to 5,
 verification-email requests to 5, and verification attempts to 30. Limits are enabled in development

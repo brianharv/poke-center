@@ -5,11 +5,19 @@ import { redirect } from "next/navigation";
 import { signInDestination } from "@/lib/return-destination";
 
 export async function readSession(headers: Headers) {
-  const session = await getAuth().api.getSession({
+  return (await readRequestSession(headers)).session;
+}
+
+export async function readRequestSession(headers: Headers, renew = false) {
+  const result = await getAuth().api.getSession({
     headers,
-    query: { disableCookieCache: true, disableRefresh: true },
+    returnHeaders: true,
+    query: { disableCookieCache: true, disableRefresh: !renew },
   });
-  return session?.user.emailVerified ? session : null;
+  return {
+    session: result.response?.user.emailVerified ? result.response : null,
+    headers: result.headers,
+  };
 }
 
 export async function requirePageSession() {

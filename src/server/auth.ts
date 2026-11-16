@@ -2,7 +2,12 @@ import "server-only";
 import { after } from "next/server";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "@better-auth/prisma-adapter";
-import { APIError, createAuthMiddleware } from "better-auth/api";
+import {
+  APIError,
+  createAuthMiddleware,
+  getSessionFromCtx,
+} from "better-auth/api";
+import { deleteSessionCookie } from "better-auth/cookies";
 import nodemailer from "nodemailer";
 import { z } from "zod";
 import {
@@ -14,6 +19,7 @@ import {
 } from "@/lib/auth-validation";
 import { safeReturnTo } from "@/lib/return-destination";
 import { getDatabase } from "@/server/database";
+import { getSessionPolicy } from "@/server/session-policy";
 
 const VERIFICATION_TTL_SECONDS = 60 * 60;
 
@@ -27,6 +33,7 @@ const configurationSchema = z.object({
 
 function createAuth() {
   const configuration = configurationSchema.parse(process.env);
+  const policy = getSessionPolicy();
   const transport = nodemailer.createTransport({
     host: configuration.SMTP_HOST,
     port: configuration.SMTP_PORT,
@@ -63,7 +70,48 @@ function createAuth() {
         });
       },
     },
-    session: { cookieCache: { enabled: false } },
+    session: {
+      expiresIn: policy.SESSION_IDLE_SECONDS,
+      updateAge: policy.SESSION_RENEWAL_SECONDS,
+      cookieCache: { enabled: false },
+    },
+    databaseHooks: {
+      session: {
+        create: {
+          before: async (session) => ({
+            data: {
+              ...session,
+              expiresAt: new Date(
+                Math.min(
+                  session.expiresAt.getTime(),
+                  session.createdAt.getTime() +
+                    policy.SESSION_ABSOLUTE_SECONDS * 1_000,
+                ),
+              ),
+            },
+          }),
+        },
+        update: {
+          before: async (data, ctx) => {
+            if (!data.expiresAt) return { data };
+            const original = ctx?.context.session?.session;
+            if (!original) return false;
+            const absoluteExpiry =
+              original.createdAt.getTime() +
+              policy.SESSION_ABSOLUTE_SECONDS * 1_000;
+            if (absoluteExpiry <= Date.now()) return false;
+            return {
+              data: {
+                ...data,
+                expiresAt: new Date(
+                  Math.min(data.expiresAt.getTime(), absoluteExpiry),
+                ),
+              },
+            };
+          },
+        },
+      },
+    },
     account: { accountLinking: { enabled: false } },
     rateLimit: {
       enabled: true,
@@ -93,6 +141,51 @@ function createAuth() {
     },
     hooks: {
       before: createAuthMiddleware(async (ctx) => {
+        const session = await getSessionFromCtx(ctx, {
+          disableCookieCache: true,
+          disableRefresh: true,
+        });
+        if (session) {
+          const stored = session.session;
+          const absoluteExpiry =
+            stored.createdAt.getTime() +
+            policy.SESSION_ABSOLUTE_SECONDS * 1_000;
+          const expiry = Math.min(
+            stored.expiresAt.getTime(),
+            stored.updatedAt.getTime() + policy.SESSION_IDLE_SECONDS * 1_000,
+            absoluteExpiry,
+          );
+          if (expiry <= Date.now()) {
+            await getDatabase().session.deleteMany({
+              where: { id: stored.id },
+            });
+            ctx.context.session = null;
+            deleteSessionCookie(ctx);
+          } else if (expiry < stored.expiresAt.getTime()) {
+            await getDatabase().session.updateMany({
+              where: {
+                id: stored.id,
+                expiresAt: stored.expiresAt,
+                updatedAt: stored.updatedAt,
+              },
+              data: {
+                expiresAt: new Date(expiry),
+                updatedAt: stored.updatedAt,
+              },
+            });
+            ctx.context.session = null;
+          } else if (
+            ctx.path === "/get-session" &&
+            stored.expiresAt.getTime() >= absoluteExpiry
+          ) {
+            return {
+              context: {
+                ...ctx,
+                query: { ...ctx.query, disableRefresh: true },
+              },
+            };
+          }
+        }
         if (ctx.path === "/sign-in/email") {
           const parsed = signinSchema.safeParse(ctx.body);
           if (!parsed.success) {
