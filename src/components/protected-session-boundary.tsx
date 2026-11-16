@@ -11,33 +11,25 @@ export function ProtectedSessionBoundary({
   checkIntervalSeconds: number;
   children: React.ReactNode;
 }) {
-  const { content, status, retry } = useProtectedSession(
-    userId,
-    checkIntervalSeconds,
-  );
+  const { error, retry } = useProtectedSession(userId, checkIntervalSeconds);
 
   return (
     <>
-      {status === "checking" && (
-        <p role="status" className="p-8">
-          Checking your session…
-        </p>
-      )}
-      {status === "error" && (
+      {error && (
         <div className="p-8">
           <p role="alert">
             We couldn&apos;t confirm your session. Please try again.
           </p>
           <button
             type="button"
-            onClick={retry}
+            onClick={() => void retry()}
             className="rounded border px-3 py-2"
           >
             Try again
           </button>
         </div>
       )}
-      <section ref={content} hidden={status !== "ready"} data-protected-view>
+      <section hidden={error} data-protected-view>
         {children}
       </section>
     </>

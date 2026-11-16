@@ -2,17 +2,15 @@ import "server-only";
 import { initTRPC, TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { getReadiness } from "@/server/readiness";
-import { readRequestSession } from "@/server/session";
+import type { readSession } from "@/server/session";
 import { readinessSchema } from "@/lib/readiness";
 
 const t = initTRPC
-  .context<{ headers: Headers; responseHeaders: Headers }>()
+  .context<{ session: Awaited<ReturnType<typeof readSession>> }>()
   .create();
 
 const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
-  const { session, headers } = await readRequestSession(ctx.headers, true);
-  for (const cookie of headers.getSetCookie())
-    ctx.responseHeaders.append("Set-Cookie", cookie);
+  const { session } = ctx;
   if (!session) throw new TRPCError({ code: "UNAUTHORIZED" });
   return next({
     ctx: { viewer: { id: session.user.id, email: session.user.email } },

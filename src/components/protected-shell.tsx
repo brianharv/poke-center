@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@/trpc/provider";
+import { useQueryClient } from "@tanstack/react-query";
 import { leaveProtectedView, notifyAuthChange } from "@/lib/auth-navigation";
 
 export function ProtectedShell({
@@ -10,16 +9,8 @@ export function ProtectedShell({
 }: {
   viewer: { id: string; email: string };
 }) {
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
   const [pending, setPending] = useState(false);
-  const account = useQuery(
-    trpc.viewer.queryOptions(undefined, {
-      initialData: viewer,
-      retry: false,
-      enabled: !pending,
-    }),
-  );
   const [message, setMessage] = useState("");
 
   async function signOut() {
@@ -50,7 +41,7 @@ export function ProtectedShell({
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-2xl flex-col gap-4 p-8">
       <h1 className="text-2xl font-semibold">Pokémon</h1>
-      <p>Signed in as {account.data.email}</p>
+      <p>Signed in as {viewer.email}</p>
       <p>Your Pokémon list will appear here.</p>
       {message && <p role="alert">{message}</p>}
       <button
