@@ -5,8 +5,8 @@ ENV PATH=$PNPM_HOME:$PATH
 ENV NEXT_TELEMETRY_DISABLED=1
 WORKDIR /app
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends openssl ca-certificates \
+RUN apt-get -o Acquire::Retries=0 update \
+    && apt-get -o Acquire::Retries=0 install -y --no-install-recommends apt libapt-pkg6.0 openssl ca-certificates \
     && rm -rf /var/lib/apt/lists/* \
     && npm install --global pnpm@12.16.1 \
     && npm uninstall --global npm
