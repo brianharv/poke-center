@@ -19,7 +19,7 @@ import {
 } from "@/lib/auth-validation";
 import { safeReturnTo } from "@/lib/return-destination";
 import { getDatabase } from "@/server/database";
-import { getSessionPolicy } from "@/server/session-policy";
+import { getAbsoluteExpiry, getSessionPolicy } from "@/server/session-policy";
 
 const VERIFICATION_TTL_SECONDS = 60 * 60;
 
@@ -84,8 +84,7 @@ function createAuth() {
               expiresAt: new Date(
                 Math.min(
                   session.expiresAt.getTime(),
-                  session.createdAt.getTime() +
-                    policy.SESSION_ABSOLUTE_SECONDS * 1_000,
+                  getAbsoluteExpiry(session.createdAt, policy),
                 ),
               ),
             },
@@ -96,9 +95,10 @@ function createAuth() {
             if (!data.expiresAt) return { data };
             const original = ctx?.context.session?.session;
             if (!original) return false;
-            const absoluteExpiry =
-              original.createdAt.getTime() +
-              policy.SESSION_ABSOLUTE_SECONDS * 1_000;
+            const absoluteExpiry = getAbsoluteExpiry(
+              original.createdAt,
+              policy,
+            );
             if (absoluteExpiry <= Date.now()) return false;
             return {
               data: {
@@ -147,9 +147,7 @@ function createAuth() {
         });
         if (session) {
           const stored = session.session;
-          const absoluteExpiry =
-            stored.createdAt.getTime() +
-            policy.SESSION_ABSOLUTE_SECONDS * 1_000;
+          const absoluteExpiry = getAbsoluteExpiry(stored.createdAt, policy);
           const expiry = Math.min(
             stored.expiresAt.getTime(),
             stored.updatedAt.getTime() + policy.SESSION_IDLE_SECONDS * 1_000,

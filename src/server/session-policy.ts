@@ -19,3 +19,10 @@ const sessionPolicySchema = z
 export function getSessionPolicy() {
   return sessionPolicySchema.parse(process.env);
 }
+
+export function getAbsoluteExpiry(
+  createdAt: Date,
+  policy: ReturnType<typeof getSessionPolicy>,
+) {
+  return createdAt.getTime() + policy.SESSION_ABSOLUTE_SECONDS * 1_000;
+}
