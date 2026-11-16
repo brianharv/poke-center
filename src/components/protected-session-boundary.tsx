@@ -4,12 +4,17 @@ import { useProtectedSession } from "@/lib/use-protected-session";
 
 export function ProtectedSessionBoundary({
   userId,
+  checkIntervalSeconds,
   children,
 }: {
   userId: string;
+  checkIntervalSeconds: number;
   children: React.ReactNode;
 }) {
-  const { content, status, retry } = useProtectedSession(userId);
+  const { content, status, retry } = useProtectedSession(
+    userId,
+    checkIntervalSeconds,
+  );
 
   return (
     <>

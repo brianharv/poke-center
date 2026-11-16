@@ -40,6 +40,10 @@ services:
       SMTP_FROM: ${SMTP_FROM:-Poké Center <noreply@poke-center.test>}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-}
+      SESSION_IDLE_SECONDS: ${SESSION_IDLE_SECONDS:-1800}
+      SESSION_RENEWAL_SECONDS: ${SESSION_RENEWAL_SECONDS:-300}
+      SESSION_ABSOLUTE_SECONDS: ${SESSION_ABSOLUTE_SECONDS:-604800}
+      SESSION_CHECK_SECONDS: ${SESSION_CHECK_SECONDS:-60}
       NEXT_TELEMETRY_DISABLED: "1"
     ports:
       - "127.0.0.1:${APP_PORT:-3000}:3000"
@@ -74,6 +78,7 @@ services:
     environment:
       PLAYWRIGHT_BASE_URL: http://localhost:3000
       MAILPIT_API_URL: http://mailpit:8025
+      TEST_DATABASE_URL: postgresql://${POSTGRES_USER:-poke_center}:${POSTGRES_PASSWORD:-poke_center_local}@db:5432/${POSTGRES_DB:-poke_center}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-}
     volumes:
       - ./artifacts/playwright-report:/app/playwright-report

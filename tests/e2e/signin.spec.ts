@@ -50,14 +50,15 @@ test("revoking a database session rejects its retained cookie on the next page a
         })
       ).ok(),
     ).toBe(true);
-    const denied = await page.request.get("/api/trpc/viewer");
+    expect(Boolean(cookie)).toBe(true);
+    const staleHeaders = { cookie: `${cookie!.name}=${cookie!.value}` };
+    const denied = await request.get("/api/trpc/viewer", {
+      headers: staleHeaders,
+    });
     expect(denied.status()).toBe(401);
     expect((await denied.text()).includes(user.email)).toBe(false);
-    const retained = (await page.context().cookies()).find(
-      (value) => value.name === cookie?.name,
-    );
-    expect(Boolean(cookie && retained?.value === cookie.value)).toBe(true);
-    const navigation = await page.request.get("/pokemon?type=water", {
+    const navigation = await request.get("/pokemon?type=water", {
+      headers: staleHeaders,
       maxRedirects: 0,
     });
     expect(navigation.status()).toBe(307);

@@ -30,15 +30,16 @@ export async function verificationLink(
 export async function createVerifiedUser(request: APIRequestContext) {
   const email = `signin-${randomUUID()}@example.test`;
   const password = "a verified trainer passphrase";
+  const headers = {
+    "x-forwarded-for": `198.19.${randomInt(256)}.${randomInt(1, 255)}`,
+  };
   const response = await request.post("/api/auth/sign-up/email", {
-    headers: {
-      "x-forwarded-for": `198.19.${randomInt(256)}.${randomInt(1, 255)}`,
-    },
+    headers,
     data: { email, password },
   });
   expect(response.ok()).toBe(true);
   const link = await verificationLink(request, email);
-  const verification = await request.get(link);
+  const verification = await request.get(link, { headers });
   expect(verification.ok()).toBe(true);
   return { email, password };
 }

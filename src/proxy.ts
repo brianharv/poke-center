@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { signInDestination } from "@/lib/return-destination";
-import { readSession } from "@/server/session";
+import { readRequestSession } from "@/server/session";
 
 export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
@@ -14,7 +14,10 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const session = await readSession(request.headers);
+  const { session, headers: sessionHeaders } = await readRequestSession(
+    request.headers,
+    true,
+  );
   let response: NextResponse;
   if (session) {
     const requestHeaders = new Headers(request.headers);
@@ -28,6 +31,8 @@ export async function proxy(request: NextRequest) {
     );
   }
   response.headers.set("Cache-Control", "private, no-store");
+  for (const cookie of sessionHeaders.getSetCookie())
+    response.headers.append("Set-Cookie", cookie);
   return response;
 }
 
