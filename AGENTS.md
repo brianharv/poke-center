@@ -35,6 +35,10 @@ Read `docs/agents/domain.md` before exploring domain concepts or decisions.
 Use SCREAMING_SNAKE_CASE for module-level primitive constants. Preserve names
 required by framework APIs, such as Next.js route exports `runtime` and `dynamic`.
 
+Before adding auth/session plumbing, check Better Auth's installed APIs and official
+Next.js, React, and Prisma integration guides. Use supported integrations for
+framework behavior; reserve custom code for application policy.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 ## This is NOT the Next.js you know
