@@ -267,3 +267,28 @@ test("password sign-in is rate limited on the server with accessible retry feedb
     "Too many sign-in attempts. Please wait a minute and try again.",
   );
 });
+
+test("a tRPC batch shares verified access and rejects anonymous access", async ({
+  page,
+  request,
+}) => {
+  const input = { params: { batch: "1", input: JSON.stringify({ "1": {} }) } };
+  const endpoint = "/api/trpc/viewer,readiness";
+  const denied = await request.get(endpoint, input);
+  expect(denied.status()).toBe(401);
+  const errors = await denied.json();
+  expect(
+    errors.map(
+      (entry: { error: { data: { code: string } } }) => entry.error.data.code,
+    ),
+  ).toEqual(["UNAUTHORIZED", "UNAUTHORIZED"]);
+  const user = await createVerifiedUser(request);
+  expect(
+    (await page.request.post("/api/auth/sign-in/email", { data: user })).ok(),
+  ).toBe(true);
+  const allowed = await page.request.get(endpoint, input);
+  expect(allowed.ok()).toBe(true);
+  const results = await allowed.json();
+  expect(results[0].result.data.email).toBe(user.email);
+  expect(results[1].result.data.database).toBe("connected");
+});

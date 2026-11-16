@@ -3,6 +3,7 @@ import { getAuth } from "@/server/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { signInDestination } from "@/lib/return-destination";
+import { cache } from "react";
 
 export async function readSession(headers: Headers) {
   return (await readRequestSession(headers)).session;
@@ -20,11 +21,11 @@ export async function readRequestSession(headers: Headers, renew = false) {
   };
 }
 
-export async function requirePageSession() {
+export const requirePageSession = cache(async () => {
   const requestHeaders = await headers();
   const session = await readSession(requestHeaders);
   if (!session) {
     redirect(signInDestination(requestHeaders.get("x-app-return-to")));
   }
   return session;
-}
+});

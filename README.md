@@ -75,8 +75,10 @@ destinations are allowed (`/pokemon`, plus `/development` in development). Exter
 malformed, and authentication destinations fall back to `/pokemon`. Add future
 protected routes to `src/lib/return-destination.ts` when implementing them.
 
-Pages are guarded by the server Proxy and validate sessions again before reading
-private data. All tRPC procedures use database-validated authentication and return
+The server Proxy validates page access and handles writable renewal cookies.
+Layout/page checks share one request-scoped session read before private rendering;
+that read is never cached across requests. tRPC validates once per HTTP request,
+and each protected procedure uses that verified context. These operations return
 `401` for anonymous, expired, revoked, or unverified sessions. `/api/health` is the
 public infrastructure exception. Library-managed session cookies are HttpOnly and
 SameSite=Lax; HTTPS `BETTER_AUTH_URL` origins also enable Secure cookies. Never use
@@ -85,7 +87,7 @@ cookie presence as proof of authorization in a new page, handler, or procedure.
 Sign-out revokes the database session, clears TanStack Query state, and replaces
 the current location with landing without a return destination. Sign-in also
 clears client state and replaces the document. Protected views are hidden before
-history snapshots and revalidated on restoration/focus; other tabs receive a
+history snapshots; restoring a snapshot reloads through the server guard. Other tabs receive a
 credential-free authentication-change signal when browser storage is available.
 Unauthorized client tRPC calls clear private state and return to sign-in without
 replaying mutations. Session expiration returns to the protected view and query
@@ -104,14 +106,16 @@ host development uses the same defaults.
 | `SESSION_IDLE_SECONDS`     | `1800` (30 minutes) | Inactivity expiry measured from the last recorded renewal.                                                                       |
 | `SESSION_RENEWAL_SECONDS`  | `300` (5 minutes)   | Authenticated page/data requests renew eligible sessions and deliver refreshed cookies. Must be less than the inactivity window. |
 | `SESSION_ABSOLUTE_SECONDS` | `604800` (7 days)   | Renewal never extends access beyond this age from the original sign-in.                                                          |
-| `SESSION_CHECK_SECONDS`    | `60`                | Visible idle views check at this interval or earlier at reported expiry. Configurable from 5 to 300 seconds.                     |
+| `SESSION_CHECK_SECONDS`    | `60`                | Visible idle views check at this interval. Configurable from 5 to 300 seconds.                                                   |
 
 Renewal is batched to avoid writing on every request: a request within five minutes
 of the last renewal does not move the deadline. With defaults, expiration can
 therefore occur 25–30 minutes after the last authenticated request. Scrolling,
 typing, public health checks, and idle session checks do not renew access.
-Session checks explicitly disable renewal. Hidden tabs pause their timer and
-revalidate on visibility/focus restoration; browser suspension may delay timers,
+Server-authorized content renders immediately using the supplied viewer, without
+an initial browser identity request. TanStack Query owns periodic/focus checks,
+request cancellation, and retry state. Session checks explicitly disable renewal.
+Hidden tabs skip background checks and revalidate on visibility/focus restoration; browser suspension may delay timers,
 but protected server requests always validate immediately. Network failures hide
 private content and offer retry instead of displaying stale data.
 

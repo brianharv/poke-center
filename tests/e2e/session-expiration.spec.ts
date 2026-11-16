@@ -9,6 +9,32 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
+test("a server-authorized page renders without waiting for a browser session check", async ({
+  page,
+  request,
+}) => {
+  const user = await createVerifiedUser(request);
+  expect(
+    (await page.request.post("/api/auth/sign-in/email", { data: user })).ok(),
+  ).toBe(true);
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route("**/api/auth/get-session*", async (route) => {
+    await held;
+    await route.continue();
+  });
+  try {
+    await page.goto("/pokemon");
+    await expect(
+      page.getByText(`Signed in as ${user.email}`, { exact: true }),
+    ).toBeVisible();
+  } finally {
+    release();
+  }
+});
+
 test("an idle expired session returns to the current protected view and query after sign-in", async ({
   page,
   request,
