@@ -12,12 +12,16 @@ export function notifyAuthChange(action: "signin" | "signout") {
   }
 }
 
+export function clearProtectedView(queryClient: QueryClient) {
+  const content = document.querySelector<HTMLElement>("[data-protected-view]");
+  if (content) content.hidden = true;
+  queryClient.clear();
+}
+
 export function leaveProtectedView(
   queryClient: QueryClient,
   destination: string,
 ) {
-  const content = document.querySelector<HTMLElement>("[data-protected-view]");
-  if (content) content.hidden = true;
-  queryClient.clear();
+  clearProtectedView(queryClient);
   window.location.replace(destination);
 }
