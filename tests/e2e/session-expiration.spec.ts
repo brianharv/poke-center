@@ -48,22 +48,26 @@ test("an idle expired session returns to the current protected view and query af
   await expect(
     page.getByRole("heading", { name: "Pokémon", exact: true }),
   ).toBeVisible();
-  await page.goto("/development?panel=database&page=2");
-  await expect(page.getByRole("status")).toHaveText("Database connected");
+  await page.goto("/pokemon?type=water&page=2");
+  await expect(
+    page.getByText(`Signed in as ${user.email}`, { exact: true }),
+  ).toBeVisible();
   const session = await (
     await page.request.get("/api/auth/get-session")
   ).json();
   await setSessionTimes(session.session.id, { expiresAt: new Date(0) });
   await page.clock.fastForward(60_000);
   await expect(page).toHaveURL(
-    /\/\?returnTo=%2Fdevelopment%3Fpanel%3Ddatabase%26page%3D2$/,
+    /\/\?returnTo=%2Fpokemon%3Ftype%3Dwater%26page%3D2$/,
   );
   const form = page.getByRole("form", { name: "Sign in", exact: true });
   await form.getByLabel("Email", { exact: true }).fill(user.email);
   await form.getByLabel("Password", { exact: true }).fill(user.password);
   await form.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(page).toHaveURL(/\/development\?panel=database&page=2$/);
-  await expect(page.getByRole("status")).toHaveText("Database connected");
+  await expect(page).toHaveURL(/\/pokemon\?type=water&page=2$/);
+  await expect(
+    page.getByText(`Signed in as ${user.email}`, { exact: true }),
+  ).toBeVisible();
 });
 
 test("session checks do not renew inactivity but authenticated data use renews the persistent session", async ({

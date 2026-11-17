@@ -31,8 +31,7 @@ separate deployment work.
 In development, the landing page shows database readiness above sign-in without
 requiring an account. The panel reads the public `/api/health` infrastructure check
 through TanStack Query and Zod and shows **Database connected** with a persistent
-initialization timestamp. The same panel is available to signed-in users at
-<http://localhost:3000/development>. Neither surface is shown in production;
+initialization timestamp. The panel is hidden in production;
 account tRPC operations remain protected, and the health response contains no
 account data.
 
@@ -71,7 +70,7 @@ in, and session cookie caching is disabled for immediate database validation.
 After verification, sign in from the landing page to open the protected `/pokemon`
 shell. Catalog data is a later feature. Protected navigation preserves the path and
 query in `returnTo`; successful sign-in resumes it. Only implemented protected
-destinations are allowed (`/pokemon`, plus `/development` in development). External,
+destinations are allowed (`/pokemon`). External,
 malformed, and authentication destinations fall back to `/pokemon`. Add future
 protected routes to `src/lib/return-destination.ts` when implementing them.
 
