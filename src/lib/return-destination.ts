@@ -15,10 +15,7 @@ export function safeReturnTo(value: unknown): string {
       return DEFAULT_RETURN_TO;
     }
     const url = new URL(value, "https://return.invalid");
-    const allowed =
-      url.pathname === "/pokemon" ||
-      (process.env.NODE_ENV !== "production" &&
-        url.pathname === "/development");
+    const allowed = url.pathname === "/pokemon";
     if (!allowed || value.split("?")[0] !== url.pathname)
       return DEFAULT_RETURN_TO;
     return url.pathname + url.search;
